@@ -1,0 +1,35 @@
+<!DOCTYPE html><html><head><title>Withdraw</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>body{background:linear-gradient(135deg,#0f0c29,#302b63);color:#fff;padding:20px;padding-bottom:80px}
+.glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(15px);border-radius:20px;padding:20px;margin:15px 0}
+.input{width:100%;padding:14px;margin:10px 0;background:rgba(0,0,0,0.3);border:1px solid #8d78ff;color:#fff;border-radius:12px}
+.btn{width:100%;padding:14px;background:linear-gradient(90deg,#8d78ff,#6b4eff);color:#fff;border:0;border-radius:12px;font-weight:700}
+.nav{position:fixed;bottom:0;width:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding:10px 0}
+.nav a{color:#fff;text-decoration:none;font-size:12px;text-align:center}</style></head><body>
+
+<div class="glass"><h2>🏦 Withdraw</h2><p>Balance: Rs <span id="bal">0</span></p>
+<input id="w_num" class="input" placeholder="JazzCash Number">
+<button class="btn" onclick="submitWithdraw()">Request</button></div>
+
+<div class="glass"><h2>📜 History</h2><div id="history">Loading...</div></div>
+
+<div class="nav">
+<a href="index.html">🏠<br>Home</a>
+<a href="plans.html">📊<br>Plans</a>
+<a href="deposit.html">💰<br>Deposit</a>
+<a href="withdraw.html">🏦<br>Withdraw</a>
+<a href="profile.html">👤<br>Profile</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, addDoc, collection, serverTimestamp, getDoc, doc, updateDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",projectId:"earnhub-d31f7"};
+const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore(); let uid="";
+onAuthStateChanged(auth,async u=>{ if(!u) location="login.html"; else {uid=u.uid; load()} });
+async function load(){ let d=await getDoc(doc(db,"users",uid)); bal.innerText=d.data().balance; 
+  let q=await getDocs(query(collection(db,"withdraws"),where("uid","==",uid))); history.innerHTML="";
+  q.forEach(x=> history.innerHTML += `<p>Rs${x.data().amount} - ${x.data().status}</p>`)
+}
+window.submitWithdraw=async()=>{ let d=await getDoc(doc(db,"users",uid)); if(d.data().balance<100)return alert("Min 100"); await addDoc(collection(db,"withdraws"),{uid,amount:d.data().balance,number:w_num.value,status:"pending",time:serverTimestamp()}); await updateDoc(doc(db,"users",uid),{balance:0}); alert("Sent"); }
+</script></body></html>
