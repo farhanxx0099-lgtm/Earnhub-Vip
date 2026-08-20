@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><title>Plans</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>body{background:linear-gradient(135deg,#0f0c29,#302b63);color:#fff;padding:20px;padding-bottom:80px}
+.plan{background:rgba(141,120,255,0.15);padding:15px;border-radius:15px;border:1px solid #8d78ff;margin:10px 0}
+.btn{width:100%;padding:14px;background:linear-gradient(90deg,#8d78ff,#6b4eff);color:#fff;border:0;border-radius:12px;font-weight:700}
+.nav{position:fixed;bottom:0;width:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding:10px 0}
+.nav a{color:#fff;text-decoration:none;font-size:12px;text-align:center}</style></head><body>
+
+<h2>📈 Investment Plans</h2>
+<div class="plan"><b>Rs 500</b> = Rs 50 /day x 30 Days <button class="btn" onclick="buy(500,50)">Activate</button></div>
+<div class="plan"><b>Rs 1000</b> = Rs 100 /day x 30 Days <button class="btn" onclick="buy(1000,100)">Activate</button></div>
+<div class="plan"><b>Rs 3000</b> = Rs 350 /day x 30 Days <button class="btn" onclick="buy(3000,350)">Activate</button></div>
+<div class="plan"><b>Rs 5000</b> = Rs 600 /day x 30 Days <button class="btn" onclick="buy(5000,600)">Activate</button></div>
+
+<div class="nav">
+<a href="index.html">🏠<br>Home</a>
+<a href="plans.html">📊<br>Plans</a>
+<a href="deposit.html">💰<br>Deposit</a>
+<a href="withdraw.html">🏦<br>Withdraw</a>
+<a href="profile.html">👤<br>Profile</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",projectId:"earnhub-d31f7"};
+const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore(); let uid="";
+onAuthStateChanged(auth,u=>{ if(!u) location="login.html"; else uid=u.uid });
+window.buy=(amt,daily)=>{ if(confirm("Activate Rs"+amt)) updateDoc(doc(db,"users",uid),{plan:{amount:amt,daily:daily,days:30,last:Date.now()}}); alert("Activated") }
+</script></body></html>
