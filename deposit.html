@@ -1,0 +1,35 @@
+<!DOCTYPE html><html><head><title>Deposit</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>/* same css */ body{background:linear-gradient(135deg,#0f0c29,#302b63);color:#fff;padding:20px;padding-bottom:80px}
+.glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(15px);border-radius:20px;padding:20px;margin:15px 0}
+.input{width:100%;padding:14px;margin:10px 0;background:rgba(0,0,0,0.3);border:1px solid #8d78ff;color:#fff;border-radius:12px}
+.btn{width:100%;padding:14px;background:linear-gradient(90deg,#00c853,#00e676);color:#000;border:0;border-radius:12px;font-weight:700}
+.nav{position:fixed;bottom:0;width:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding:10px 0}
+.nav a{color:#fff;text-decoration:none;font-size:12px;text-align:center}</style></head><body>
+
+<div class="glass">
+<h2>💰 Deposit</h2>
+<p>Send to jazzcash: <b>03157403828</b></p>
+<input id="d_amt" class="input" type="number" placeholder="Amount">
+<input id="d_num" class="input" placeholder="Your JazzCash Number">
+<input type="file" id="d_ss" class="input" accept="image/*">
+<button class="btn" onclick="submitDeposit()">Upload & Submit</button>
+</div>
+
+<div class="nav">
+<a href="index.html">🏠<br>Home</a>
+<a href="plans.html">📊<br>Plans</a>
+<a href="deposit.html">💰<br>Deposit</a>
+<a href="withdraw.html">🏦<br>Withdraw</a>
+<a href="profile.html">👤<br>Profile</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-storage.js";
+const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",projectId:"earnhub-d31f7",storageBucket:"earnhub-d31f7.appspot.com"};
+const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore(); const storage=getStorage(); let uid="";
+onAuthStateChanged(auth,u=>{ if(!u) location="login.html"; else uid=u.uid });
+window.submitDeposit=async()=>{ let file=d_ss.files[0]; let storageRef=ref(storage,`deposits/${uid}/${Date.now()}.jpg`); let snap=await uploadBytes(storageRef,file); let url=await getDownloadURL(snap.ref); await addDoc(collection(db,"deposits"),{uid,amount:parseInt(d_amt.value),number:d_num.value,ss:url,status:"pending",time:serverTimestamp()}); alert("Sent"); }
+</script></body></html>
