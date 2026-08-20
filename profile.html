@@ -1,0 +1,36 @@
+<!DOCTYPE html><html><head><title>Profile</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>body{background:linear-gradient(135deg,#0f0c29,#302b63);color:#fff;padding:20px;padding-bottom:80px}
+.glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(15px);border-radius:20px;padding:20px;margin:15px 0}
+.btn{width:100%;padding:14px;background:#f00;color:#fff;border:0;border-radius:12px;font-weight:700}
+.nav{position:fixed;bottom:0;width:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding:10px 0}
+.nav a{color:#fff;text-decoration:none;font-size:12px;text-align:center}</style></head><body>
+
+<div class="glass"><h2>👤 Profile</h2>
+<p>Email: <span id="email"></span></p>
+<p>Your Code: <b id="code"></b></p>
+<p>Level: <span id="level">Bronze</span></p>
+<p>Referrals: <span id="refs">0</span></p>
+<p>Referral Earning: Rs <span id="refearn">0</span></p>
+<button class="btn" onclick="logout()">Logout</button></div>
+
+<div class="nav">
+<a href="index.html">🏠<br>Home</a>
+<a href="plans.html">📊<br>Plans</a>
+<a href="deposit.html">💰<br>Deposit</a>
+<a href="withdraw.html">🏦<br>Withdraw</a>
+<a href="profile.html">👤<br>Profile</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",projectId:"earnhub-d31f7"};
+const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore();
+onAuthStateChanged(auth,async u=>{ if(!u) location="login.html"; else { 
+  email.innerText=u.email; let d=await getDoc(doc(db,"users",u.uid)); let data=d.data();
+  code.innerText=data.referralCode; refs.innerText=data.referrals||0; refearn.innerText=(data.referrals||0)*50;
+  if((data.referrals||0)>10) level.innerText="Gold"; else if((data.referrals||0)>5) level.innerText="Silver";
+}});
+window.logout=()=>signOut(auth);
+</script></body></html>
