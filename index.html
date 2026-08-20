@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EarnHub VIP</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+body{background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#fff;min-height:100vh}
+.hidden{display:none}
+.box{padding:20px;max-width:500px;margin:auto}
+.glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:20px;margin:15px 0;box-shadow:0 8px 32px 0 rgba(0,0,0,0.37)}
+.input{width:100%;padding:14px;margin:10px 0;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:12px;outline:none}
+.input:focus{border-color:#8d78ff}
+.btn{width:100%;padding:14px;margin:10px 0;background:linear-gradient(90deg,#8d78ff,#6b4eff);color:#fff;border:0;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;transition:0.3s}
+.btn:hover{transform:scale(1.02)}
+.btn-green{background:linear-gradient(90deg,#00c853,#00e676)}
+.balance-card{text-align:center}
+.balance-card h1{font-size:40px;color:#8d78ff}
+.plan-grid{display:grid;gap:10px}
+.plan{background:rgba(141,120,255,0.15);padding:15px;border-radius:15px;border:1px solid #8d78ff}
+.header{display:flex;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+
+<div id="auth" class="box">
+<div class="glass">
+<h2 style="text-align:center;font-size:28px">EarnHub <span style="color:#8d78ff">VIP</span></h2>
+<input id="email" class="input" placeholder="Email">
+<input id="pass" class="input" type="password" placeholder="Password">
+<input id="ref" class="input" placeholder="Referral Code Optional">
+<button class="btn" onclick="signup()">Register</button>
+<button class="btn" onclick="login()">Login</button>
+</div>
+</div>
+
+<div id="app" class="box hidden">
+<div class="header">
+<h2>Hello 👋</h2>
+<button class="btn" style="width:auto;padding:8px 15px;background:#f00" onclick="logout()">Logout</button>
+</div>
+
+<div class="glass balance-card">
+<p>Your Balance</p>
+<h1>Rs <span id="bal">0</span></h1>
+</div>
+
+<div class="glass">
+<h3>💰 Deposit</h3>
+<p>Send to: <b id="adminNum">03157403828</b> <button onclick="copy('03157403828')" style="padding:5px 10px;font-size:12px">Copy</button></p>
+<input id="d_amt" class="input" type="number" placeholder="Amount">
+<input id="d_num" class="input" placeholder="Your JazzCash Number">
+<input type="file" id="d_ss" class="input" accept="image/*">
+<button class="btn btn-green" onclick="submitDeposit()">Upload Screenshot & Submit</button>
+</div>
+
+<div class="glass">
+<h3>📈 Investment Plans</h3>
+<div class="plan-grid">
+<div class="plan"><b>Rs 500</b> = Rs 50 /day x 30 Days <button class="btn" onclick="buyPlan(500,50)">Activate</button></div>
+<div class="plan"><b>Rs 1000</b> = Rs 100 /day x 30 Days <button class="btn" onclick="buyPlan(1000,100)">Activate</button></div>
+<div class="plan"><b>Rs 3000</b> = Rs 350 /day x 30 Days <button class="btn" onclick="buyPlan(3000,350)">Activate</button></div>
+<div class="plan"><b>Rs 5000</b> = Rs 600 /day x 30 Days <button class="btn" onclick="buyPlan(5000,600)">Activate</button></div>
+</div>
+<div id="myplan" style="margin-top:10px"></div>
+</div>
+
+<div class="glass">
+<h3>🏦 Withdraw</h3>
+<input id="w_num" class="input" placeholder="JazzCash/Easypaisa Number">
+<button class="btn" onclick="submitWithdraw()">Request Withdraw</button>
+<p style="font-size:12px;color:#aaa">Min 100. Approved in 2 min</p>
+</div>
+
+<div class="glass">
+<h3>🎁 Referral - Earn 10%</h3>
+<p>Your Code: <b id="mycode" style="color:#8d78ff;font-size:20px"></b> <button onclick="copy(document.getElementById('mycode').innerText)">Copy</button></p>
+</div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-storage.js";
+
+const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",authDomain:"earnhub-d31f7.firebaseapp.com",projectId:"earnhub-d31f7",storageBucket:"earnhub-d31f7.appspot.com"};
+const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore(); const storage=getStorage();
+let uid="";
+
+onAuthStateChanged(auth,async u=>{ if(u){uid=u.uid; auth.classList.add('hidden'); app.classList.remove('hidden'); loadUser();} });
+
+window.signup=async()=>{ let res=await createUserWithEmailAndPassword(auth,email.value,pass.value); await setDoc(doc(db,"users",res.user.uid),{balance:0,referrals:0,referralCode:res.user.uid.slice(0,6),referredBy:ref.value,plan:null}); }
+window.login=()=>signInWithEmailAndPassword(auth,email.value,pass.value);
+window.logout=()=>signOut(auth);
+
+async function loadUser(){ let d=await getDoc(doc(db,"users",uid)); let data=d.data(); bal.innerText=data.balance; mycode.innerText=data.referralCode; checkProfit(data); showPlan(data.plan); }
+
+function checkProfit(data){ if(data.plan && Date.now()-data.plan.last>86400000 && data.plan.days>0){ updateDoc(doc(db,"users",uid),{balance:increment(data.plan.daily),"plan.last":Date.now(),"plan.days":increment(-1)}); if(data.plan.days<=1) updateDoc(doc(db,"users",uid),{plan:null}); }}
+
+window.buyPlan=(amt,daily)=>{ if(confirm("Activate Rs"+amt+" Plan?")){ updateDoc(doc(db,"users",uid),{plan:{amount:amt,daily:daily,days:30,last:Date.now()}}); alert("Plan Activated"); loadUser(); } }
+
+function showPlan(p){ myplan.innerHTML = p ? `<div class="plan" style="background:rgba(0,230,118,0.2)"><b>Active:</b> Rs${p.amount} = Rs${p.daily}/day<br>Days left: ${p.days}</div>` : `<p>No Active Plan</p>` }
+
+window.submitDeposit=async()=>{
+  let file=d_ss.files[0]; if(!file){alert("Screenshot upload karo");return;}
+  let storageRef=ref(storage,`deposits/${uid}/${Date.now()}.jpg`);
+  let snap=await uploadBytes(storageRef,file); let url=await getDownloadURL(snap.ref);
+  await addDoc(collection(db,"deposits"),{uid:uid,amount:parseInt(d_amt.value),number:d_num.value,ss:url,status:"pending",time:serverTimestamp()});
+  alert("Request Sent. Admin approve karega");
+}
+
+window.submitWithdraw=async()=>{
+  let d=await getDoc(doc(db,"users",uid)); if(d.data().balance<100){alert("Min 100");return;}
+  await addDoc(collection(db,"withdraws"),{uid:uid,amount:d.data().balance,number:w_num.value,status:"pending",time:serverTimestamp()});
+  await updateDoc(doc(db,"users",uid),{balance:0}); alert("Withdraw request sent");
+}
+
+window.copy=(t)=>{navigator.clipboard.writeText(t); alert("Copied: "+t)}
+</script>
+</body>
+</html>
