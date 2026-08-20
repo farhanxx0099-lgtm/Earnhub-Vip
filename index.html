@@ -20,15 +20,18 @@ body{background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#fff;min-h
 .plan-grid{display:grid;gap:10px}
 .plan{background:rgba(141,120,255,0.15);padding:15px;border-radius:15px;border:1px solid #8d78ff}
 .header{display:flex;justify-content:space-between;align-items:center}
+#loader{position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0c29;display:flex;justify-content:center;align-items:center;z-index:999}
 </style>
 </head>
 <body>
 
-<div id="auth" class="box">
+<div id="loader"><h2>Loading...</h2></div>
+
+<div id="auth" class="box hidden">
 <div class="glass">
 <h2 style="text-align:center;font-size:28px">EarnHub <span style="color:#8d78ff">VIP</span></h2>
-<input id="email" class="input" placeholder="Email">
-<input id="pass" class="input" type="password" placeholder="Password">
+<input id="email" class="input" placeholder="Apna Gmail">
+<input id="pass" class="input" type="password" placeholder="Password 6+ digit">
 <input id="ref" class="input" placeholder="Referral Code Optional">
 <button class="btn" onclick="signup()">Register</button>
 <button class="btn" onclick="login()">Login</button>
@@ -48,7 +51,7 @@ body{background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);color:#fff;min-h
 
 <div class="glass">
 <h3>💰 Deposit</h3>
-<p>Send to: <b id="adminNum">03157403828</b> <button onclick="copy('03157403828')" style="padding:5px 10px;font-size:12px">Copy</button></p>
+<p>Send to: <b id="adminNum">0300-1234567</b> <button onclick="copy('03001234567')" style="padding:5px 10px;font-size:12px">Copy</button></p>
 <input id="d_amt" class="input" type="number" placeholder="Amount">
 <input id="d_num" class="input" placeholder="Your JazzCash Number">
 <input type="file" id="d_ss" class="input" accept="image/*">
@@ -86,36 +89,113 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, on
 import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, getDocs, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-storage.js";
 
-const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",authDomain:"earnhub-d31f7.firebaseapp.com",projectId:"earnhub-d31f7",storageBucket:"earnhub-d31f7.appspot.com"};
-const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore(); const storage=getStorage();
+const firebaseConfig={
+  apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",
+  authDomain:"earnhub-d31f7.firebaseapp.com",
+  projectId:"earnhub-d31f7",
+  storageBucket:"earnhub-d31f7.appspot.com"
+};
+const app=initializeApp(firebaseConfig); 
+const auth=getAuth(); 
+const db=getFirestore(); 
+const storage=getStorage();
 let uid="";
 
-onAuthStateChanged(auth,async u=>{ if(u){uid=u.uid; auth.classList.add('hidden'); app.classList.remove('hidden'); loadUser();} });
+onAuthStateChanged(auth,async u=>{ 
+  document.getElementById('loader').style.display = 'none';
+  if(u){
+    uid=u.uid; 
+    document.getElementById('auth').classList.add('hidden'); 
+    document.getElementById('app').classList.remove('hidden'); 
+    loadUser();
+  }else{
+    document.getElementById('auth').classList.remove('hidden');
+  }
+});
 
-window.signup=async()=>{ let res=await createUserWithEmailAndPassword(auth,email.value,pass.value); await setDoc(doc(db,"users",res.user.uid),{balance:0,referrals:0,referralCode:res.user.uid.slice(0,6),referredBy:ref.value,plan:null}); }
-window.login=()=>signInWithEmailAndPassword(auth,email.value,pass.value);
+window.signup=async()=>{
+  try{
+    if(document.getElementById('pass').value.length < 6) return alert("Password 6 digit ka rakho");
+    let res=await createUserWithEmailAndPassword(auth,document.getElementById('email').value,document.getElementById('pass').value); 
+    await setDoc(doc(db,"users",res.user.uid),{
+      balance:0,
+      referrals:0,
+      referralCode:res.user.uid.slice(0,6).toUpperCase(),
+      referredBy:document.getElementById('ref').value,
+      plan:null
+    }); 
+    alert("Account Ban Gaya ✅")
+  }catch(e){ alert("Error: " + e.message) }
+}
+
+window.login=async()=>{
+  try{
+    await signInWithEmailAndPassword(auth,document.getElementById('email').value,document.getElementById('pass').value);
+  }catch(e){ alert("Error: " + e.message) }
+}
 window.logout=()=>signOut(auth);
 
-async function loadUser(){ let d=await getDoc(doc(db,"users",uid)); let data=d.data(); bal.innerText=data.balance; mycode.innerText=data.referralCode; checkProfit(data); showPlan(data.plan); }
+async function loadUser(){ 
+  let d=await getDoc(doc(db,"users",uid)); 
+  let data=d.data(); 
+  document.getElementById('bal').innerText=data.balance; 
+  document.getElementById('mycode').innerText=data.referralCode; 
+  checkProfit(data); 
+  showPlan(data.plan); 
+}
 
-function checkProfit(data){ if(data.plan && Date.now()-data.plan.last>86400000 && data.plan.days>0){ updateDoc(doc(db,"users",uid),{balance:increment(data.plan.daily),"plan.last":Date.now(),"plan.days":increment(-1)}); if(data.plan.days<=1) updateDoc(doc(db,"users",uid),{plan:null}); }}
+function checkProfit(data){ 
+  if(data.plan && Date.now()-data.plan.last>86400000 && data.plan.days>0){ 
+    updateDoc(doc(db,"users",uid),{
+      balance:increment(data.plan.daily),
+      "plan.last":Date.now(),
+      "plan.days":increment(-1)
+    }); 
+    if(data.plan.days<=1) updateDoc(doc(db,"users",uid),{plan:null}); 
+  }
+}
 
-window.buyPlan=(amt,daily)=>{ if(confirm("Activate Rs"+amt+" Plan?")){ updateDoc(doc(db,"users",uid),{plan:{amount:amt,daily:daily,days:30,last:Date.now()}}); alert("Plan Activated"); loadUser(); } }
+window.buyPlan=(amt,daily)=>{
+  if(confirm("Activate Rs"+amt+" Plan?")){
+    updateDoc(doc(db,"users",uid),{
+      plan:{amount:amt,daily:daily,days:30,last:Date.now()}
+    }); 
+    alert("Plan Activated"); 
+    loadUser(); 
+  } 
+}
 
-function showPlan(p){ myplan.innerHTML = p ? `<div class="plan" style="background:rgba(0,230,118,0.2)"><b>Active:</b> Rs${p.amount} = Rs${p.daily}/day<br>Days left: ${p.days}</div>` : `<p>No Active Plan</p>` }
+function showPlan(p){ 
+  document.getElementById('myplan').innerHTML = p ? 
+  `<div class="plan" style="background:rgba(0,230,118,0.2)"><b>Active:</b> Rs${p.amount} = Rs${p.daily}/day<br>Days left: ${p.days}</div>` : 
+  `<p>No Active Plan</p>` 
+}
 
 window.submitDeposit=async()=>{
-  let file=d_ss.files[0]; if(!file){alert("Screenshot upload karo");return;}
+  let file=document.getElementById('d_ss').files[0]; 
+  if(!file){alert("Screenshot upload karo");return;}
   let storageRef=ref(storage,`deposits/${uid}/${Date.now()}.jpg`);
-  let snap=await uploadBytes(storageRef,file); let url=await getDownloadURL(snap.ref);
-  await addDoc(collection(db,"deposits"),{uid:uid,amount:parseInt(d_amt.value),number:d_num.value,ss:url,status:"pending",time:serverTimestamp()});
+  let snap=await uploadBytes(storageRef,file); 
+  let url=await getDownloadURL(snap.ref);
+  await addDoc(collection(db,"deposits"),{
+    uid:uid,
+    amount:parseInt(document.getElementById('d_amt').value),
+    number:document.getElementById('d_num').value,
+    ss:url,status:"pending",time:serverTimestamp()
+  });
   alert("Request Sent. Admin approve karega");
 }
 
 window.submitWithdraw=async()=>{
-  let d=await getDoc(doc(db,"users",uid)); if(d.data().balance<100){alert("Min 100");return;}
-  await addDoc(collection(db,"withdraws"),{uid:uid,amount:d.data().balance,number:w_num.value,status:"pending",time:serverTimestamp()});
-  await updateDoc(doc(db,"users",uid),{balance:0}); alert("Withdraw request sent");
+  let d=await getDoc(doc(db,"users",uid)); 
+  if(d.data().balance<100){alert("Min 100");return;}
+  await addDoc(collection(db,"withdraws"),{
+    uid:uid,amount:d.data().balance,
+    number:document.getElementById('w_num').value,
+    status:"pending",time:serverTimestamp()
+  });
+  await updateDoc(doc(db,"users",uid),{balance:0}); 
+  alert("Withdraw request sent");
 }
 
 window.copy=(t)=>{navigator.clipboard.writeText(t); alert("Copied: "+t)}
