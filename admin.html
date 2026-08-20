@@ -1,0 +1,142 @@
+<!DOCTYPE html><html><head><title>Admin Panel - EarnHub VIP</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins}
+body{background:#0a0a0a;color:#fff;padding:20px}
+h2{margin:20px 0;color:#8d78ff}
+.card{background:#1a1a1a;border:1px solid #8d78ff;border-radius:15px;padding:15px;margin:10px 0}
+.btn{padding:8px 15px;border:0;border-radius:8px;font-weight:600;cursor:pointer;margin:5px}
+.approve{background:#00c853;color:#000}
+.reject{background:#f00;color:#fff}
+img{max-width:100%;border-radius:10px;margin:10px 0}
+.tab{display:flex;gap:10px;margin-bottom:20px}
+.tab button{padding:10px 20px;background:#222;border:1px solid #8d78ff;color:#fff;border-radius:10px;cursor:pointer}
+.tab button.active{background:#8d78ff}
+</style></head><body>
+
+<h2>👑 Admin Panel</h2>
+
+<div class="tab">
+<button onclick="showTab('deposits')" class="active">💰 Deposits</button>
+<button onclick="showTab('withdraws')">🏦 Withdraws</button>
+<button onclick="showTab('users')">👥 Users</button>
+</div>
+
+<div id="deposits"></div>
+<div id="withdraws" style="display:none"></div>
+<div id="users" style="display:none"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, getDoc, increment } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",projectId:"earnhub-d31f7"};
+const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore();
+
+// APNA ADMIN EMAIL YAHAN DAALO
+const ADMIN_EMAIL = "admin123@gmail.com"; 
+
+onAuthStateChanged(auth,async u=>{
+  if(!u || u.email !== ADMIN_EMAIL){ 
+    alert("Access Denied!"); 
+    location="login.html"; 
+    return; 
+  }
+  loadDeposits(); loadWithdraws(); loadUsers();
+});
+
+window.showTab=(tab)=>{
+  document.querySelectorAll('.tab button').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  deposits.style.display = tab=='deposits' ? 'block' : 'none';
+  withdraws.style.display = tab=='withdraws' ? 'block' : 'none';
+  users.style.display = tab=='users' ? 'block' : 'none';
+}
+
+// 1. DEPOSITS LOAD
+async function loadDeposits(){
+  let snap = await getDocs(collection(db,"deposits"));
+  deposits.innerHTML = "";
+  snap.forEach(d=>{
+    let x = d.data();
+    deposits.innerHTML += `
+    <div class="card">
+      <b>User:</b> ${x.uid.slice(0,8)}...<br>
+      <b>Amount:</b> Rs ${x.amount}<br>
+      <b>Number:</b> ${x.number}<br>
+      <b>Status:</b> ${x.status}<br>
+      <img src="${x.ss}"><br>
+      ${x.status=='pending' ? `
+        <button class="btn approve" onclick="approveDeposit('${d.id}','${x.uid}',${x.amount})">Accept</button>
+        <button class="btn reject" onclick="rejectDeposit('${d.id}')">Reject</button>
+      ` : ''}
+    </div>`;
+  });
+}
+
+// 2. DEPOSIT ACCEPT
+window.approveDeposit=async(id,uid,amount)=>{
+  await updateDoc(doc(db,"deposits",id),{status:"approved"});
+  await updateDoc(doc(db,"users",uid),{balance:increment(amount)});
+  alert("Deposit Approved + Balance Added");
+  loadDeposits();
+}
+
+window.rejectDeposit=async(id)=>{
+  await updateDoc(doc(db,"deposits",id),{status:"rejected"});
+  alert("Deposit Rejected");
+  loadDeposits();
+}
+
+// 3. WITHDRAWS LOAD
+async function loadWithdraws(){
+  let snap = await getDocs(collection(db,"withdraws"));
+  withdraws.innerHTML = "";
+  snap.forEach(d=>{
+    let x = d.data();
+    withdraws.innerHTML += `
+    <div class="card">
+      <b>User:</b> ${x.uid.slice(0,8)}...<br>
+      <b>Amount:</b> Rs ${x.amount}<br>
+      <b>Number:</b> ${x.number}<br>
+      <b>Status:</b> ${x.status}<br>
+      ${x.status=='pending' ? `
+        <button class="btn approve" onclick="approveWithdraw('${d.id}')">Paid</button>
+        <button class="btn reject" onclick="rejectWithdraw('${d.id}')">Reject</button>
+      ` : ''}
+    </div>`;
+  });
+}
+
+// 4. WITHDRAW APPROVE
+window.approveWithdraw=async(id)=>{
+  await updateDoc(doc(db,"withdraws",id),{status:"paid"});
+  alert("Withdraw Marked as Paid");
+  loadWithdraws();
+}
+
+window.rejectWithdraw=async(id)=>{
+  await updateDoc(doc(db,"withdraws",id),{status:"rejected"});
+  // balance wapis add karna ho to yahan code likhna
+  alert("Withdraw Rejected");
+  loadWithdraws();
+}
+
+// 5. USERS LOAD
+async function loadUsers(){
+  let snap = await getDocs(collection(db,"users"));
+  users.innerHTML = "";
+  snap.forEach(d=>{
+    let x = d.data();
+    users.innerHTML += `
+    <div class="card">
+      <b>UID:</b> ${d.id.slice(0,8)}...<br>
+      <b>Balance:</b> Rs ${x.balance}<br>
+      <b>Referrals:</b> ${x.referrals||0}<br>
+      <b>Plan:</b> ${x.plan ? 'Rs'+x.plan.amount : 'None'}<br>
+    </div>`;
+  });
+}
+</script></body></html>
