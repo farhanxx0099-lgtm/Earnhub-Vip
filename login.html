@@ -1,0 +1,33 @@
+<!DOCTYPE html><html><head><title>Login - EarnHub VIP</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins}
+body{background:linear-gradient(135deg,#0f0c29,#302b63);color:#fff;display:flex;justify-content:center;align-items:center;height:100vh}
+.glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:30px;width:90%;max-width:400px}
+.input{width:100%;padding:14px;margin:10px 0;background:rgba(0,0,0,0.3);border:1px solid #8d78ff;color:#fff;border-radius:12px}
+.btn{width:100%;padding:14px;margin:10px 0;background:linear-gradient(90deg,#8d78ff,#6b4eff);color:#fff;border:0;border-radius:12px;font-weight:700;cursor:pointer}
+</style></head><body>
+<div class="glass">
+<h2 style="text-align:center">EarnHub <span style="color:#8d78ff">VIP</span></h2>
+<input id="email" class="input" placeholder="Apna Gmail">
+<input id="pass" class="input" type="password" placeholder="Password 6+ digit">
+<input id="ref" class="input" placeholder="Referral Code Optional">
+<button class="btn" onclick="signup()">Register</button>
+<button class="btn" onclick="login()">Login</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyAcPDFKm48dBxMOh9ESO3LusFcrTIKJc8M",authDomain:"earnhub-d31f7.firebaseapp.com",projectId:"earnhub-d31f7"};
+const app=initializeApp(firebaseConfig); const auth=getAuth(); const db=getFirestore();
+
+onAuthStateChanged(auth,u=>{ if(u) location="index.html" });
+
+window.signup=async()=>{ try{ let res=await createUserWithEmailAndPassword(auth,email.value,pass.value); 
+await setDoc(doc(db,"users",res.user.uid),{balance:0,referrals:0,referralCode:res.user.uid.slice(0,6).toUpperCase(),referredBy:ref.value,plan:null}); 
+alert("Account Ban Gaya ✅")}catch(e){ alert(e.message) } }
+
+window.login=async()=>{ try{ await signInWithEmailAndPassword(auth,email.value,pass.value) }catch(e){ alert(e.message) } }
+</script></body></html>
